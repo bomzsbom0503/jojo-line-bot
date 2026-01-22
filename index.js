@@ -103,12 +103,12 @@ async function handleEvent(event, jojoImages) {
       text:
         "可用指令：\n" +
         "廢話 / 認同 / 反胃 / 不能 / 不准 / 拒絕 / 知道了 / 說謊 / 揍你 / 變態 / 上車 / 快來 / 等我 / 質疑\n" +
-        "或輸入 random 隨機"
+        "或輸入 抽 隨機"
     });
   }
 
   // 隨機
-  if (text.toLowerCase() === "random") {
+  if (text.toLowerCase() === "抽") {
     const keys = Object.keys(jojoImages);
     const key = keys[Math.floor(Math.random() * keys.length)];
     const url = jojoImages[key];
