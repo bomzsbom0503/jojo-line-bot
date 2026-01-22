@@ -57,11 +57,27 @@ async function replyImage(event, url) {
   });
 }
 
-/* ========= 達比賭局選單 ========= */
+/* ========= 杜王町選單（不滅鑽石） ========= */
+function moriohMenu() {
+  return {
+    type: "text",
+    text: "杜王町今日行程？",
+    quickReply: {
+      items: [
+        { type: "action", action: { type: "postback", label: "護髮警報", data: "act=hair" } },
+        { type: "action", action: { type: "postback", label: "康一吐槽", data: "act=koichi" } },
+        { type: "action", action: { type: "postback", label: "露伴嫌棄", data: "act=rohan" } },
+        { type: "action", action: { type: "postback", label: "平靜生活", data: "act=kira" } }
+      ]
+    }
+  };
+}
+
+/* ========= 達比賭局選單（星塵鬥士） ========= */
 function darbyMenu() {
   return {
     type: "text",
-    text: "🎰 達比的賭局開始了。\n你要怎麼做？",
+    text: "🎰 達比的賭局開始了。",
     quickReply: {
       items: [
         { type: "action", action: { type: "postback", label: "YES YES YES", data: "act=yes" } },
@@ -72,20 +88,17 @@ function darbyMenu() {
   };
 }
 
-/* ========= 達比心理戰 ========= */
+/* ========= Postback 處理 ========= */
 async function handlePostback(event, jojoImages) {
   const act = new URLSearchParams(event.postback.data).get("act");
 
+  // 達比賭局
   if (act === "yes") {
     return client.replyMessage(event.replyToken, [
       { type: "text", text: "YES" },
       { type: "text", text: "YES" },
       { type: "text", text: "YES YES YES" },
-      {
-        type: "image",
-        originalContentUrl: jojoImages["認同"],
-        previewImageUrl: jojoImages["認同"]
-      }
+      { type: "image", originalContentUrl: jojoImages["認同"], previewImageUrl: jojoImages["認同"] }
     ]);
   }
 
@@ -94,11 +107,7 @@ async function handlePostback(event, jojoImages) {
       { type: "text", text: "NO" },
       { type: "text", text: "NO" },
       { type: "text", text: "NO NO NO" },
-      {
-        type: "image",
-        originalContentUrl: jojoImages["拒絕"],
-        previewImageUrl: jojoImages["拒絕"]
-      }
+      { type: "image", originalContentUrl: jojoImages["拒絕"], previewImageUrl: jojoImages["拒絕"] }
     ]);
   }
 
@@ -106,16 +115,38 @@ async function handlePostback(event, jojoImages) {
     const key = pick(Object.keys(jojoImages));
     return client.replyMessage(event.replyToken, [
       { type: "text", text: "……你確定要梭哈嗎？" },
-      { type: "text", text: "（對方的手在顫抖。）" },
-      {
-        type: "image",
-        originalContentUrl: jojoImages[key],
-        previewImageUrl: jojoImages[key]
-      }
+      { type: "image", originalContentUrl: jojoImages[key], previewImageUrl: jojoImages[key] }
     ]);
   }
 
-  return null;
+  // 杜王町
+  if (act === "hair") {
+    return client.replyMessage(event.replyToken, [
+      { type: "text", text: "你剛剛是在說我髮型？" },
+      { type: "image", originalContentUrl: jojoImages["揍你"], previewImageUrl: jojoImages["揍你"] }
+    ]);
+  }
+
+  if (act === "koichi") {
+    return client.replyMessage(event.replyToken, [
+      { type: "text", text: "欸欸欸欸欸！？" },
+      { type: "image", originalContentUrl: jojoImages["質疑"], previewImageUrl: jojoImages["質疑"] }
+    ]);
+  }
+
+  if (act === "rohan") {
+    return client.replyMessage(event.replyToken, [
+      { type: "text", text: "我拒絕。" },
+      { type: "image", originalContentUrl: jojoImages["拒絕"], previewImageUrl: jojoImages["拒絕"] }
+    ]);
+  }
+
+  if (act === "kira") {
+    return client.replyMessage(event.replyToken, [
+      { type: "text", text: "我只是想過平靜的生活。" },
+      { type: "image", originalContentUrl: jojoImages["等我"], previewImageUrl: jojoImages["等我"] }
+    ]);
+  }
 }
 
 /* ========= webhook ========= */
@@ -125,6 +156,7 @@ app.post("/webhook", line.middleware(config), async (req, res) => {
 
   await Promise.all(
     req.body.events.map(async (event) => {
+      // postback
       if (event.type === "postback") {
         return handlePostback(event, imageMap);
       }
@@ -133,17 +165,38 @@ app.post("/webhook", line.middleware(config), async (req, res) => {
 
       const text = event.message.text.trim();
 
-      if (text === "賭局" || text === "達比") {
+      // help 指令（保留）
+      if (text === "help" || text === "指令") {
+        return client.replyMessage(event.replyToken, {
+          type: "text",
+          text:
+            "指令一覽：\n" +
+            "杜王町 / menu → 不滅鑽石互動\n" +
+            "達比 / 賭局 → 星塵鬥士心理戰\n" +
+            "抽 → 隨機梗圖\n" +
+            "或直接輸入關鍵字（廢話、拒絕、不准…）"
+        });
+      }
+
+      // 杜王町
+      if (text === "杜王町" || text === "menu") {
+        return client.replyMessage(event.replyToken, moriohMenu());
+      }
+
+      // 達比賭局
+      if (text === "達比" || text === "賭局") {
         return client.replyMessage(event.replyToken, darbyMenu());
       }
 
-      if (imageMap[text]) {
-        return replyImage(event, imageMap[text]);
-      }
-
+      // 抽
       if (text === "抽") {
         const key = pick(Object.keys(imageMap));
         return replyImage(event, imageMap[key]);
+      }
+
+      // 關鍵字回圖
+      if (imageMap[text]) {
+        return replyImage(event, imageMap[text]);
       }
     })
   );
@@ -153,6 +206,6 @@ app.post("/webhook", line.middleware(config), async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log("JOJO Darby Bot running on", PORT);
+  console.log("JOJO bot running on", PORT);
 });
 
