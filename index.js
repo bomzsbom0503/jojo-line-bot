@@ -60,7 +60,7 @@ function buildImageMap(baseUrl) {
     質疑: `${baseUrl}/img/zhiyi.png`,
     變態: `${baseUrl}/img/biantai.png`,
     好: `${baseUrl}/img/yesyesyes.png`,
-        不好: `${baseUrl}/img/nonono.png`,
+    不好: `${baseUrl}/img/nonono.png`,
     舔: `${baseUrl}/img/zerozero.png`,
     暫停: `${baseUrl}/img/za-warudo.jpg`,
 
@@ -83,21 +83,58 @@ async function replyImage(event, url) {
 }
 
 /**
- * ✅ 關鍵修正：YES / ALL IN 常常「按了沒反應」其實是 replyMessage 內的某張圖 URL 壞掉，
- * LINE 會整包 400，導致看起來像按鈕失效。
- * 下面做「安全圖片訊息」：URL 不存在/不是 https 就跳過那張，至少文字+按鈕會回。
+ * 安全圖片訊息：URL 不存在/不是 https 就跳過，避免整包 reply 400
  */
 function makeImageMessage(jojoImages, key) {
   const url = jojoImages[key];
   if (!url || !/^https:\/\//i.test(url)) return null;
-  return {
-    type: "image",
-    originalContentUrl: url,
-    previewImageUrl: url,
-  };
+  return { type: "image", originalContentUrl: url, previewImageUrl: url };
 }
 function safeMessages(arr) {
   return arr.filter(Boolean);
+}
+
+/* ========= 抽要吃什麼 ========= */
+const foodPool = [
+  "滷肉飯",
+  "牛肉麵",
+  "鹽酥雞",
+  "雞排",
+  "拉麵",
+  "壽司",
+  "咖哩飯",
+  "火鍋",
+  "義大利麵",
+  "披薩",
+  "漢堡",
+  "便當",
+  "鍋貼",
+  "水餃",
+  "炒飯",
+  "炒麵",
+  "燒臘",
+  "韓式炸雞",
+  "麻辣燙",
+  "夜市小吃",
+];
+
+function drawFoodMessage() {
+  const food = pick(foodPool);
+  return {
+    type: "text",
+    text:
+      "……\n" +
+      "時間，停止了。\n\n" +
+      "ザ・ワールド（ZA WARUDO）\n\n" +
+      "我已經看見結局了——\n\n" +
+      `你今天要吃的是：\n【${food}】\n\n` +
+      "這就是命運。",
+    quickReply: {
+      items: [
+        { type: "action", action: { type: "message", label: "不服，再抽一次", text: "吃什麼" } },
+      ],
+    },
+  };
 }
 
 /* ========= 杜王町選單（不滅鑽石） ========= */
@@ -136,101 +173,106 @@ function darbyMenu() {
   };
 }
 
+/* ========= 主選單 ========= */
+function mainMenu() {
+  return {
+    type: "text",
+    text: "想玩哪個？",
+    quickReply: {
+      items: [
+        { type: "action", action: { type: "message", label: "抽圖片", text: "抽" } },
+        { type: "action", action: { type: "message", label: "吃什麼", text: "吃什麼" } },
+        { type: "action", action: { type: "message", label: "杜王町", text: "杜王町" } },
+        { type: "action", action: { type: "message", label: "達比賭局", text: "賭局" } },
+      ],
+    },
+  };
+}
+
 /* ========= Postback 處理 ========= */
 async function handlePostback(event, jojoImages) {
   const act = new URLSearchParams(event.postback.data).get("act");
-  console.log("[postback]", event.postback.data, "=> act:", act); // ✅ debug 用
+  console.log("[postback]", event.postback.data, "=> act:", act);
 
-  // ===== 達比賭局 =====
-if (act === "darby_yes") {
-  return client.replyMessage(event.replyToken, [
-    { type: "image", originalContentUrl: jojoImages["達比對戰"], previewImageUrl: jojoImages["達比對戰"] },
+  // ===== 達比賭局（注意：reply 一次最多 5 則訊息）=====
+  if (act === "darby_yes") {
+    const msgs = safeMessages([
+      makeImageMessage(jojoImages, "達比對戰"),
+      { type: "text", text: "YES……\nYES……\n你先動搖了。" },
+      makeImageMessage(jojoImages, "達比勝利"),
+      { type: "text", text: "下一手呢？", quickReply: darbyChoiceQuickReply() },
+    ]);
+    return client.replyMessage(event.replyToken, msgs);
+  }
 
-    // ✅ 合併成一則，省 2 則
-    { type: "text", text: "YES……\nYES……\n你先動搖了。" },
+  if (act === "darby_no") {
+    const msgs = safeMessages([
+      makeImageMessage(jojoImages, "達比對戰"),
+      { type: "text", text: "NO……" },
+      { type: "text", text: "STAND.exe 無法讀取你的內心。" },
+      { type: "text", text: "賭局繼續。" },
+      { type: "text", text: "選吧。", quickReply: darbyChoiceQuickReply() },
+    ]);
+    return client.replyMessage(event.replyToken, msgs);
+  }
 
-    { type: "image", originalContentUrl: jojoImages["達比勝利"], previewImageUrl: jojoImages["達比勝利"] },
-
-    // ✅ 第 4 則帶 quickReply（總共 4 則）
-    { type: "text", text: "下一手呢？", quickReply: darbyChoiceQuickReply() },
-  ]);
-}
-
-if (act === "darby_no") {
-  return client.replyMessage(event.replyToken, [
-    { type: "image", originalContentUrl: jojoImages["達比對戰"], previewImageUrl: jojoImages["達比對戰"] },
-    { type: "text", text: "NO……" },
-    { type: "text", text: "STAND.exe 無法讀取你的內心。" },
-    { type: "text", text: "賭局繼續。" },
-
-    // ✅ 第 5 則帶 quickReply（總共 5 則）
-    { type: "text", text: "選吧。", quickReply: darbyChoiceQuickReply() },
-  ]);
-}
-
-console.log("DARBY_ALLIN_VERSION=v2"); 
-
-if (act === "darby_allin") {
-  return client.replyMessage(event.replyToken, [
-    { type: "image", originalContentUrl: jojoImages["達比對戰"], previewImageUrl: jojoImages["達比對戰"] },
-
-    // ✅ 合併成一則，省 2 則
-    { type: "text", text: "……你確定？\n我還沒翻牌。\n但你已經流汗了。" },
-
-    { type: "image", originalContentUrl: jojoImages["達比崩潰"], previewImageUrl: jojoImages["達比崩潰"] },
-
-    // ✅ 第 4 則帶 quickReply（總共 4 則）
-    { type: "text", text: "再選一次。", quickReply: darbyChoiceQuickReply() },
-  ]);
-}
+  if (act === "darby_allin") {
+    const msgs = safeMessages([
+      makeImageMessage(jojoImages, "達比對戰"),
+      { type: "text", text: "……你確定？\n我還沒翻牌。\n但你已經流汗了。" },
+      makeImageMessage(jojoImages, "達比崩潰"),
+      { type: "text", text: "再選一次。", quickReply: darbyChoiceQuickReply() },
+    ]);
+    return client.replyMessage(event.replyToken, msgs);
+  }
 
   // ===== 杜王町 =====
   if (act === "hair") {
-    return client.replyMessage(event.replyToken, [
+    const msgs = safeMessages([
       { type: "text", text: "你剛剛是在說我髮型？" },
-      makeImageMessage(jojoImages, "揍你") || { type: "text", text: "(揍你圖載入失敗)" },
+      makeImageMessage(jojoImages, "揍你"),
     ]);
+    return client.replyMessage(event.replyToken, msgs);
   }
 
   if (act === "koichi") {
-    return client.replyMessage(event.replyToken, [
+    const msgs = safeMessages([
       { type: "text", text: "欸欸欸欸欸！？" },
-      makeImageMessage(jojoImages, "質疑") || { type: "text", text: "(質疑圖載入失敗)" },
+      makeImageMessage(jojoImages, "質疑"),
     ]);
+    return client.replyMessage(event.replyToken, msgs);
   }
 
   if (act === "rohan") {
-    return client.replyMessage(event.replyToken, [
+    const msgs = safeMessages([
       { type: "text", text: "我拒絕。" },
-      makeImageMessage(jojoImages, "拒絕") || { type: "text", text: "(拒絕圖載入失敗)" },
+      makeImageMessage(jojoImages, "拒絕"),
     ]);
+    return client.replyMessage(event.replyToken, msgs);
   }
 
   if (act === "kira") {
-    return client.replyMessage(event.replyToken, [
+    const msgs = safeMessages([
       { type: "text", text: "我只是想過平靜的生活。" },
-      makeImageMessage(jojoImages, "等我") || { type: "text", text: "(等我圖載入失敗)" },
+      makeImageMessage(jojoImages, "等我"),
     ]);
+    return client.replyMessage(event.replyToken, msgs);
   }
 
-  return; // 沒匹配到 act 就不回
+  return;
 }
 
 /* ========= webhook ========= */
 app.post("/webhook", line.middleware(config), (req, res) => {
-  // 先回 200，避免 LINE webhook 超時
   res.status(200).end();
 
   const baseUrl = getBaseUrlFromReq(req);
   const imageMap = buildImageMap(baseUrl);
+  console.log("[baseUrl]", baseUrl);
 
-  console.log("[baseUrl]", baseUrl); // ✅ debug 用
-
-  // 背景處理（不要阻塞 webhook 回應）
   Promise.all(
     req.body.events.map(async (event) => {
       try {
-        // postback
         if (event.type === "postback") {
           return handlePostback(event, imageMap);
         }
@@ -239,25 +281,37 @@ app.post("/webhook", line.middleware(config), (req, res) => {
 
         const text = event.message.text.trim();
 
+        // 主選單
+        if (text === "menu" || text === "選單") {
+          return client.replyMessage(event.replyToken, mainMenu());
+        }
+
         // help
         if (text === "help" || text === "指令") {
           return client.replyMessage(event.replyToken, {
             type: "text",
             text:
+              "▍主選單：輸入「menu」或「選單」\n\n" +
               "▍互動模式\n" +
               "杜王町：輸入「杜王町」或「menu」\n" +
-              "達比／賭局：輸入「達比」或「賭局」\n\n" +
-              "▍隨機 → 輸入「抽」\n\n" +
-              "▍關鍵字\n" +
+              "達比／賭局：輸入「達比」或「賭局」\n" +
+              "吃什麼：輸入「吃什麼 / 抽吃的 / 要吃什麼」\n\n" +
+              "▍隨機圖片 → 輸入「抽」\n\n" +
+              "▍關鍵字回圖\n" +
               "上車、不准、不能、反胃、快來、\n" +
               "拒絕、知道了、揍你、等我、認同、\n" +
               "說謊、廢話、質疑、變態、\n" +
-              "好、舔、暫停",
+              "好、不好、舔、暫停",
           });
         }
 
+        // 抽要吃什麼
+        if (text === "吃什麼" || text === "要吃什麼" || text === "抽吃的") {
+          return client.replyMessage(event.replyToken, drawFoodMessage());
+        }
+
         // 杜王町
-        if (text === "杜王町" || text === "menu") {
+        if (text === "杜王町") {
           return client.replyMessage(event.replyToken, moriohMenu());
         }
 
@@ -266,7 +320,7 @@ app.post("/webhook", line.middleware(config), (req, res) => {
           return client.replyMessage(event.replyToken, darbyMenu());
         }
 
-        // 抽
+        // 抽圖片
         if (text === "抽") {
           const key = pick(Object.keys(imageMap));
           return replyImage(event, imageMap[key]);
