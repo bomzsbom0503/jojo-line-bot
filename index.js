@@ -55,6 +55,7 @@ function buildImageMap(baseUrl) {
     變態: `${baseUrl}/img/biantai.png`,
         好: `${baseUrl}/img/yesyesyes.png`,
         舔: `${baseUrl}/img/zerozero.png`,
+        暫停: `${baseUrl}/img/za-warudo.jpg`,
   };
 }
 
@@ -186,16 +187,20 @@ app.post("/webhook", line.middleware(config), (req, res) => {
 
         // help
         if (text === "help" || text === "指令") {
-          return client.replyMessage(event.replyToken, {
+            return client.replyMessage(event.replyToken, {
             type: "text",
             text:
-              "指令一覽：\n" +
-              "杜王町 / menu → 不滅鑽石互動\n" +
-              "達比 / 賭局 → 星塵鬥士心理戰\n" +
-              "抽 → 隨機梗圖\n" +
-              "或直接輸入關鍵字（廢話、拒絕、不准…）",
-          });
-        }
+                  "▍互動模式\n" +
+                  "杜王町 (coming soon)\n" +
+                  "達比 / 賭局 (coming soon)\n\n" +
+                  "▍隨機 → 抽\n\n" +
+                  "▍關鍵字\n" +
+                  "上車、不准、不能、反胃、快來、\n" +
+                  "拒絕、知道了、揍你、等我、認同、\n" +
+                  "說謊、廢話、質疑、變態、\n" +
+                  "好、舔、暫停"
+  });
+}
 
         // 杜王町
         if (text === "杜王町" || text === "menu") {
