@@ -106,6 +106,15 @@ function darbyMenu() {
     },
   };
 }
+function darbyChoiceQuickReply() {
+  return {
+    items: [
+      { type: "action", action: { type: "postback", label: "YES", data: "act=darby_yes" } },
+      { type: "action", action: { type: "postback", label: "NO", data: "act=darby_no" } },
+      { type: "action", action: { type: "postback", label: "ALL IN", data: "act=darby_allin" } },
+    ],
+  };
+}
 
 
 /* ========= Postback 處理 ========= */
@@ -120,8 +129,10 @@ if (act === "darby_yes") {
     { type: "text", text: "YES……" },
     { type: "text", text: "你先動搖了。" },
     { type: "image", originalContentUrl: jojoImages["達比勝利"], previewImageUrl: jojoImages["達比勝利"] },
+    { type: "text", text: "下一手呢？", quickReply: darbyMenu().quickReply },
   ]);
 }
+
 
 if (act === "darby_no") {
   return client.replyMessage(event.replyToken, [
@@ -149,8 +160,10 @@ if (act === "darby_allin") {
     { type: "text", text: "我還沒翻牌。" },
     { type: "text", text: "但你已經流汗了。" },
     { type: "image", originalContentUrl: jojoImages["達比崩潰"], previewImageUrl: jojoImages["達比崩潰"] },
+    { type: "text", text: "再選一次。", quickReply: darbyMenu().quickReply },
   ]);
 }
+
 
   // 杜王町
   if (act === "hair") {
