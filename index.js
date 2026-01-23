@@ -53,6 +53,8 @@ function buildImageMap(baseUrl) {
     廢話: `${baseUrl}/img/feihua.png`,
     質疑: `${baseUrl}/img/zhiyi.png`,
     變態: `${baseUrl}/img/biantai.png`,
+        好: `${baseUrl}/img/yesyesyes.png`,
+        舔: `${baseUrl}/img/zerozero.png`,
   };
 }
 
