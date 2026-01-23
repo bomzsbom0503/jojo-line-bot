@@ -60,6 +60,7 @@ function buildImageMap(baseUrl) {
     質疑: `${baseUrl}/img/zhiyi.png`,
     變態: `${baseUrl}/img/biantai.png`,
     好: `${baseUrl}/img/yesyesyes.png`,
+        不好: `${baseUrl}/img/nonono.png`,
     舔: `${baseUrl}/img/zerozero.png`,
     暫停: `${baseUrl}/img/za-warudo.jpg`,
 
