@@ -125,12 +125,22 @@ if (act === "darby_yes") {
 
 if (act === "darby_no") {
   return client.replyMessage(event.replyToken, [
-    { type: "image", originalContentUrl: jojoImages["達比對戰"], previewImageUrl: jojoImages["達比對戰"] },
+    {
+      type: "image",
+      originalContentUrl: jojoImages["達比對戰"],
+      previewImageUrl: jojoImages["達比對戰"]
+    },
     { type: "text", text: "NO……" },
     { type: "text", text: "STAND.exe 無法讀取你的內心。" },
     { type: "text", text: "賭局繼續。" },
+    {
+      type: "text",
+      text: "選吧。",
+      quickReply: darbyChoiceQuickReply()
+    }
   ]);
 }
+
 
 if (act === "darby_allin") {
   return client.replyMessage(event.replyToken, [
