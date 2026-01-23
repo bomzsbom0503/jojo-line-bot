@@ -17,8 +17,14 @@ const client = new line.Client(config);
 // 靜態圖片（確保 public/img 內真的有這些檔案，且檔名大小寫一致）
 app.use("/img", express.static(path.join(__dirname, "public", "img")));
 
-// health check
+// ✅ Render/一般健康檢查：同時提供 / 與 /health，避免 Deploy timed out
+app.get("/", (req, res) => res.send("OK"));
 app.get("/health", (req, res) => res.send("OK"));
+
+// ✅ 啟動時檢查環境變數（不阻擋啟動，但會在 log 明確提示）
+if (!process.env.LINE_TOKEN || !process.env.LINE_SECRET) {
+  console.error("Missing LINE_TOKEN or LINE_SECRET in environment variables.");
+}
 
 function getBaseUrlFromReq(req) {
   let base = process.env.BASE_URL;
@@ -75,6 +81,24 @@ async function replyImage(event, url) {
   });
 }
 
+/**
+ * ✅ 關鍵修正：YES / ALL IN 常常「按了沒反應」其實是 replyMessage 內的某張圖 URL 壞掉，
+ * LINE 會整包 400，導致看起來像按鈕失效。
+ * 下面做「安全圖片訊息」：URL 不存在/不是 https 就跳過那張，至少文字+按鈕會回。
+ */
+function makeImageMessage(jojoImages, key) {
+  const url = jojoImages[key];
+  if (!url || !/^https:\/\//i.test(url)) return null;
+  return {
+    type: "image",
+    originalContentUrl: url,
+    previewImageUrl: url,
+  };
+}
+function safeMessages(arr) {
+  return arr.filter(Boolean);
+}
+
 /* ========= 杜王町選單（不滅鑽石） ========= */
 function moriohMenu() {
   return {
@@ -91,16 +115,7 @@ function moriohMenu() {
   };
 }
 
-/* ========= 達比賭局選單（星塵鬥士） ========= */
-function darbyMenu() {
-  return {
-    type: "text",
-    text: "🎰 達比的賭局開始了。\n用生命開始下注!!。",
-    quickReply: darbyChoiceQuickReply(), // ✅ 統一走同一個 quickReply 來源
-  };
-}
-
-/* ========= 達比賭局 quick reply（避免 ReferenceError） ========= */
+/* ========= 達比賭局 quick reply ========= */
 function darbyChoiceQuickReply() {
   return {
     items: [
@@ -111,69 +126,82 @@ function darbyChoiceQuickReply() {
   };
 }
 
+/* ========= 達比賭局選單（星塵鬥士） ========= */
+function darbyMenu() {
+  return {
+    type: "text",
+    text: "🎰 達比的賭局開始了。\n用生命開始下注!!。",
+    quickReply: darbyChoiceQuickReply(),
+  };
+}
+
 /* ========= Postback 處理 ========= */
 async function handlePostback(event, jojoImages) {
   const act = new URLSearchParams(event.postback.data).get("act");
+  console.log("[postback]", event.postback.data, "=> act:", act); // ✅ debug 用
 
   // ===== 達比賭局 =====
   if (act === "darby_yes") {
-    return client.replyMessage(event.replyToken, [
-      { type: "image", originalContentUrl: jojoImages["達比對戰"], previewImageUrl: jojoImages["達比對戰"] },
+    const msgs = safeMessages([
+      makeImageMessage(jojoImages, "達比對戰"),
       { type: "text", text: "YES……" },
       { type: "text", text: "YES……" },
       { type: "text", text: "你先動搖了。" },
-      { type: "image", originalContentUrl: jojoImages["達比勝利"], previewImageUrl: jojoImages["達比勝利"] },
+      makeImageMessage(jojoImages, "達比勝利"), // ✅ 壞圖會自動跳過，避免整包 fail
       { type: "text", text: "下一手呢？", quickReply: darbyChoiceQuickReply() },
     ]);
+    return client.replyMessage(event.replyToken, msgs);
   }
 
   if (act === "darby_no") {
-    return client.replyMessage(event.replyToken, [
-      { type: "image", originalContentUrl: jojoImages["達比對戰"], previewImageUrl: jojoImages["達比對戰"] },
+    const msgs = safeMessages([
+      makeImageMessage(jojoImages, "達比對戰"),
       { type: "text", text: "NO……" },
       { type: "text", text: "STAND.exe 無法讀取你的內心。" },
       { type: "text", text: "賭局繼續。" },
       { type: "text", text: "選吧。", quickReply: darbyChoiceQuickReply() },
     ]);
+    return client.replyMessage(event.replyToken, msgs);
   }
 
   if (act === "darby_allin") {
-    return client.replyMessage(event.replyToken, [
-      { type: "image", originalContentUrl: jojoImages["達比對戰"], previewImageUrl: jojoImages["達比對戰"] },
+    const msgs = safeMessages([
+      makeImageMessage(jojoImages, "達比對戰"),
       { type: "text", text: "……你確定？" },
       { type: "text", text: "我還沒翻牌。" },
       { type: "text", text: "但你已經流汗了。" },
-      { type: "image", originalContentUrl: jojoImages["達比崩潰"], previewImageUrl: jojoImages["達比崩潰"] },
+      makeImageMessage(jojoImages, "達比崩潰"), // ✅ 壞圖會自動跳過，避免整包 fail
       { type: "text", text: "再選一次。", quickReply: darbyChoiceQuickReply() },
     ]);
+    return client.replyMessage(event.replyToken, msgs);
   }
 
   // ===== 杜王町 =====
   if (act === "hair") {
     return client.replyMessage(event.replyToken, [
       { type: "text", text: "你剛剛是在說我髮型？" },
-      { type: "image", originalContentUrl: jojoImages["揍你"], previewImageUrl: jojoImages["揍你"] },
+      makeImageMessage(jojoImages, "揍你") || { type: "text", text: "(揍你圖載入失敗)" },
     ]);
   }
 
   if (act === "koichi") {
     return client.replyMessage(event.replyToken, [
       { type: "text", text: "欸欸欸欸欸！？" },
-      { type: "image", originalContentUrl: jojoImages["質疑"], previewImageUrl: jojoImages["質疑"] },
+      makeImageMessage(jojoImages, "質疑") || { type: "text", text: "(質疑圖載入失敗)" },
     ]);
   }
 
   if (act === "rohan") {
     return client.replyMessage(event.replyToken, [
       { type: "text", text: "我拒絕。" },
-      { type: "image", originalContentUrl: jojoImages["拒絕"], previewImageUrl: jojoImages["拒絕"] },
+      makeImageMessage(jojoImages, "拒絕") || { type: "text", text: "(拒絕圖載入失敗)" },
     ]);
   }
 
   if (act === "kira") {
     return client.replyMessage(event.replyToken, [
       { type: "text", text: "我只是想過平靜的生活。" },
-      { type: "image", originalContentUrl: jojoImages["等我"], previewImageUrl: jojoImages["等我"] },
+      makeImageMessage(jojoImages, "等我") || { type: "text", text: "(等我圖載入失敗)" },
     ]);
   }
 
@@ -187,6 +215,8 @@ app.post("/webhook", line.middleware(config), (req, res) => {
 
   const baseUrl = getBaseUrlFromReq(req);
   const imageMap = buildImageMap(baseUrl);
+
+  console.log("[baseUrl]", baseUrl); // ✅ debug 用
 
   // 背景處理（不要阻塞 webhook 回應）
   Promise.all(
@@ -249,3 +279,4 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log("JOJO bot running on", PORT);
 });
+
