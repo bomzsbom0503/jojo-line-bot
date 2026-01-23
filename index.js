@@ -145,7 +145,7 @@ if (act === "darby_yes") {
   return client.replyMessage(event.replyToken, [
     { type: "image", originalContentUrl: jojoImages["達比對戰"], previewImageUrl: jojoImages["達比對戰"] },
 
-    // ✅ 合併成一則文字（原本 3 則）
+    // ✅ 合併成一則，省 2 則
     { type: "text", text: "YES……\nYES……\n你先動搖了。" },
 
     { type: "image", originalContentUrl: jojoImages["達比勝利"], previewImageUrl: jojoImages["達比勝利"] },
@@ -167,11 +167,13 @@ if (act === "darby_no") {
   ]);
 }
 
+console.log("DARBY_ALLIN_VERSION=v2"); 
+
 if (act === "darby_allin") {
   return client.replyMessage(event.replyToken, [
     { type: "image", originalContentUrl: jojoImages["達比對戰"], previewImageUrl: jojoImages["達比對戰"] },
 
-    // ✅ 合併成一則文字（原本 3 則）
+    // ✅ 合併成一則，省 2 則
     { type: "text", text: "……你確定？\n我還沒翻牌。\n但你已經流汗了。" },
 
     { type: "image", originalContentUrl: jojoImages["達比崩潰"], previewImageUrl: jojoImages["達比崩潰"] },
