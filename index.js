@@ -141,40 +141,45 @@ async function handlePostback(event, jojoImages) {
   console.log("[postback]", event.postback.data, "=> act:", act); // ✅ debug 用
 
   // ===== 達比賭局 =====
-  if (act === "darby_yes") {
-    const msgs = safeMessages([
-      makeImageMessage(jojoImages, "達比對戰"),
-      { type: "text", text: "YES……" },
-      { type: "text", text: "YES……" },
-      { type: "text", text: "你先動搖了。" },
-      makeImageMessage(jojoImages, "達比勝利"), // ✅ 壞圖會自動跳過，避免整包 fail
-      { type: "text", text: "下一手呢？", quickReply: darbyChoiceQuickReply() },
-    ]);
-    return client.replyMessage(event.replyToken, msgs);
-  }
+if (act === "darby_yes") {
+  return client.replyMessage(event.replyToken, [
+    { type: "image", originalContentUrl: jojoImages["達比對戰"], previewImageUrl: jojoImages["達比對戰"] },
 
-  if (act === "darby_no") {
-    const msgs = safeMessages([
-      makeImageMessage(jojoImages, "達比對戰"),
-      { type: "text", text: "NO……" },
-      { type: "text", text: "STAND.exe 無法讀取你的內心。" },
-      { type: "text", text: "賭局繼續。" },
-      { type: "text", text: "選吧。", quickReply: darbyChoiceQuickReply() },
-    ]);
-    return client.replyMessage(event.replyToken, msgs);
-  }
+    // ✅ 合併成一則文字（原本 3 則）
+    { type: "text", text: "YES……\nYES……\n你先動搖了。" },
 
-  if (act === "darby_allin") {
-    const msgs = safeMessages([
-      makeImageMessage(jojoImages, "達比對戰"),
-      { type: "text", text: "……你確定？" },
-      { type: "text", text: "我還沒翻牌。" },
-      { type: "text", text: "但你已經流汗了。" },
-      makeImageMessage(jojoImages, "達比崩潰"), // ✅ 壞圖會自動跳過，避免整包 fail
-      { type: "text", text: "再選一次。", quickReply: darbyChoiceQuickReply() },
-    ]);
-    return client.replyMessage(event.replyToken, msgs);
-  }
+    { type: "image", originalContentUrl: jojoImages["達比勝利"], previewImageUrl: jojoImages["達比勝利"] },
+
+    // ✅ 第 4 則帶 quickReply（總共 4 則）
+    { type: "text", text: "下一手呢？", quickReply: darbyChoiceQuickReply() },
+  ]);
+}
+
+if (act === "darby_no") {
+  return client.replyMessage(event.replyToken, [
+    { type: "image", originalContentUrl: jojoImages["達比對戰"], previewImageUrl: jojoImages["達比對戰"] },
+    { type: "text", text: "NO……" },
+    { type: "text", text: "STAND.exe 無法讀取你的內心。" },
+    { type: "text", text: "賭局繼續。" },
+
+    // ✅ 第 5 則帶 quickReply（總共 5 則）
+    { type: "text", text: "選吧。", quickReply: darbyChoiceQuickReply() },
+  ]);
+}
+
+if (act === "darby_allin") {
+  return client.replyMessage(event.replyToken, [
+    { type: "image", originalContentUrl: jojoImages["達比對戰"], previewImageUrl: jojoImages["達比對戰"] },
+
+    // ✅ 合併成一則文字（原本 3 則）
+    { type: "text", text: "……你確定？\n我還沒翻牌。\n但你已經流汗了。" },
+
+    { type: "image", originalContentUrl: jojoImages["達比崩潰"], previewImageUrl: jojoImages["達比崩潰"] },
+
+    // ✅ 第 4 則帶 quickReply（總共 4 則）
+    { type: "text", text: "再選一次。", quickReply: darbyChoiceQuickReply() },
+  ]);
+}
 
   // ===== 杜王町 =====
   if (act === "hair") {
