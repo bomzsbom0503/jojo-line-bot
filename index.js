@@ -53,15 +53,14 @@ function buildImageMap(baseUrl) {
     廢話: `${baseUrl}/img/feihua.png`,
     質疑: `${baseUrl}/img/zhiyi.png`,
     變態: `${baseUrl}/img/biantai.png`,
-        好: `${baseUrl}/img/yesyesyes.png`,
-        舔: `${baseUrl}/img/zerozero.png`,
-        暫停: `${baseUrl}/img/za-warudo.jpg`,
+    好: `${baseUrl}/img/yesyesyes.png`,
+    舔: `${baseUrl}/img/zerozero.png`,
+    暫停: `${baseUrl}/img/za-warudo.jpg`,
 
     達比開場: `${baseUrl}/img/darby_opening.png`,
     達比對戰: `${baseUrl}/img/darby_mid.png`,
     達比勝利: `${baseUrl}/img/darby_got_you.png`,
     達比崩潰: `${baseUrl}/img/darby_lose.png`,
-
   };
 }
 
@@ -97,15 +96,11 @@ function darbyMenu() {
   return {
     type: "text",
     text: "🎰 達比的賭局開始了。\n用生命開始下注!!。",
-    quickReply: {
-      items: [
-        { type: "action", action: { type: "postback", label: "YES", data: "act=darby_yes" } },
-        { type: "action", action: { type: "postback", label: "NO", data: "act=darby_no" } },
-        { type: "action", action: { type: "postback", label: "ALL IN", data: "act=darby_allin" } },
-      ],
-    },
+    quickReply: darbyChoiceQuickReply(), // ✅ 統一走同一個 quickReply 來源
   };
 }
+
+/* ========= 達比賭局 quick reply（避免 ReferenceError） ========= */
 function darbyChoiceQuickReply() {
   return {
     items: [
@@ -116,56 +111,44 @@ function darbyChoiceQuickReply() {
   };
 }
 
-
 /* ========= Postback 處理 ========= */
 async function handlePostback(event, jojoImages) {
   const act = new URLSearchParams(event.postback.data).get("act");
 
-// ===== 達比賭局 =====
-if (act === "darby_yes") {
-  return client.replyMessage(event.replyToken, [
-    { type: "image", originalContentUrl: jojoImages["達比對戰"], previewImageUrl: jojoImages["達比對戰"] },
-    { type: "text", text: "YES……" },
-    { type: "text", text: "YES……" },
-    { type: "text", text: "你先動搖了。" },
-    { type: "image", originalContentUrl: jojoImages["達比勝利"], previewImageUrl: jojoImages["達比勝利"] },
-    { type: "text", text: "下一手呢？", quickReply: darbyMenu().quickReply },
-  ]);
-}
+  // ===== 達比賭局 =====
+  if (act === "darby_yes") {
+    return client.replyMessage(event.replyToken, [
+      { type: "image", originalContentUrl: jojoImages["達比對戰"], previewImageUrl: jojoImages["達比對戰"] },
+      { type: "text", text: "YES……" },
+      { type: "text", text: "YES……" },
+      { type: "text", text: "你先動搖了。" },
+      { type: "image", originalContentUrl: jojoImages["達比勝利"], previewImageUrl: jojoImages["達比勝利"] },
+      { type: "text", text: "下一手呢？", quickReply: darbyChoiceQuickReply() },
+    ]);
+  }
 
+  if (act === "darby_no") {
+    return client.replyMessage(event.replyToken, [
+      { type: "image", originalContentUrl: jojoImages["達比對戰"], previewImageUrl: jojoImages["達比對戰"] },
+      { type: "text", text: "NO……" },
+      { type: "text", text: "STAND.exe 無法讀取你的內心。" },
+      { type: "text", text: "賭局繼續。" },
+      { type: "text", text: "選吧。", quickReply: darbyChoiceQuickReply() },
+    ]);
+  }
 
-if (act === "darby_no") {
-  return client.replyMessage(event.replyToken, [
-    {
-      type: "image",
-      originalContentUrl: jojoImages["達比對戰"],
-      previewImageUrl: jojoImages["達比對戰"]
-    },
-    { type: "text", text: "NO……" },
-    { type: "text", text: "STAND.exe 無法讀取你的內心。" },
-    { type: "text", text: "賭局繼續。" },
-    {
-      type: "text",
-      text: "選吧。",
-      quickReply: darbyChoiceQuickReply()
-    }
-  ]);
-}
+  if (act === "darby_allin") {
+    return client.replyMessage(event.replyToken, [
+      { type: "image", originalContentUrl: jojoImages["達比對戰"], previewImageUrl: jojoImages["達比對戰"] },
+      { type: "text", text: "……你確定？" },
+      { type: "text", text: "我還沒翻牌。" },
+      { type: "text", text: "但你已經流汗了。" },
+      { type: "image", originalContentUrl: jojoImages["達比崩潰"], previewImageUrl: jojoImages["達比崩潰"] },
+      { type: "text", text: "再選一次。", quickReply: darbyChoiceQuickReply() },
+    ]);
+  }
 
-
-if (act === "darby_allin") {
-  return client.replyMessage(event.replyToken, [
-    { type: "image", originalContentUrl: jojoImages["達比對戰"], previewImageUrl: jojoImages["達比對戰"] },
-    { type: "text", text: "……你確定？" },
-    { type: "text", text: "我還沒翻牌。" },
-    { type: "text", text: "但你已經流汗了。" },
-    { type: "image", originalContentUrl: jojoImages["達比崩潰"], previewImageUrl: jojoImages["達比崩潰"] },
-    { type: "text", text: "再選一次。", quickReply: darbyMenu().quickReply },
-  ]);
-}
-
-
-  // 杜王町
+  // ===== 杜王町 =====
   if (act === "hair") {
     return client.replyMessage(event.replyToken, [
       { type: "text", text: "你剛剛是在說我髮型？" },
@@ -220,20 +203,20 @@ app.post("/webhook", line.middleware(config), (req, res) => {
 
         // help
         if (text === "help" || text === "指令") {
-            return client.replyMessage(event.replyToken, {
+          return client.replyMessage(event.replyToken, {
             type: "text",
             text:
-                  "▍互動模式\n" +
-                  "杜王町 (coming soon)\n" +
-                  "達比 / 賭局 (coming soon)\n\n" +
-                  "▍隨機 → 抽\n\n" +
-                  "▍關鍵字\n" +
-                  "上車、不准、不能、反胃、快來、\n" +
-                  "拒絕、知道了、揍你、等我、認同、\n" +
-                  "說謊、廢話、質疑、變態、\n" +
-                  "好、舔、暫停"
-  });
-}
+              "▍互動模式\n" +
+              "杜王町：輸入「杜王町」或「menu」\n" +
+              "達比／賭局：輸入「達比」或「賭局」\n\n" +
+              "▍隨機 → 輸入「抽」\n\n" +
+              "▍關鍵字\n" +
+              "上車、不准、不能、反胃、快來、\n" +
+              "拒絕、知道了、揍你、等我、認同、\n" +
+              "說謊、廢話、質疑、變態、\n" +
+              "好、舔、暫停",
+          });
+        }
 
         // 杜王町
         if (text === "杜王町" || text === "menu") {
@@ -266,5 +249,3 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log("JOJO bot running on", PORT);
 });
-
-
