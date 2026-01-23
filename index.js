@@ -56,6 +56,12 @@ function buildImageMap(baseUrl) {
         好: `${baseUrl}/img/yesyesyes.png`,
         舔: `${baseUrl}/img/zerozero.png`,
         暫停: `${baseUrl}/img/za-warudo.jpg`,
+
+    達比開場: `${baseUrl}/img/darby_opening.png`,
+    達比對戰: `${baseUrl}/img/darby_mid.png`,
+    達比勝利: `${baseUrl}/img/darby_got_you.png`,
+    達比崩潰: `${baseUrl}/img/darby_lose.png`,
+
   };
 }
 
@@ -90,47 +96,51 @@ function moriohMenu() {
 function darbyMenu() {
   return {
     type: "text",
-    text: "🎰 達比的賭局開始了。",
+    text: "🎰 達比的賭局開始了。\n用生命開始下注!!。",
     quickReply: {
       items: [
-        { type: "action", action: { type: "postback", label: "YES YES YES", data: "act=yes" } },
-        { type: "action", action: { type: "postback", label: "NO NO NO", data: "act=no" } },
-        { type: "action", action: { type: "postback", label: "ALL IN", data: "act=allin" } },
+        { type: "action", action: { type: "postback", label: "YES", data: "act=darby_yes" } },
+        { type: "action", action: { type: "postback", label: "NO", data: "act=darby_no" } },
+        { type: "action", action: { type: "postback", label: "ALL IN", data: "act=darby_allin" } },
       ],
     },
   };
 }
 
+
 /* ========= Postback 處理 ========= */
 async function handlePostback(event, jojoImages) {
   const act = new URLSearchParams(event.postback.data).get("act");
 
-  // 達比賭局
-  if (act === "yes") {
-    return client.replyMessage(event.replyToken, [
-      { type: "text", text: "YES" },
-      { type: "text", text: "YES" },
-      { type: "text", text: "YES YES YES" },
-      { type: "image", originalContentUrl: jojoImages["認同"], previewImageUrl: jojoImages["認同"] },
-    ]);
-  }
+// ===== 達比賭局 =====
+if (act === "darby_yes") {
+  return client.replyMessage(event.replyToken, [
+    { type: "image", originalContentUrl: jojoImages["達比對戰"], previewImageUrl: jojoImages["達比對戰"] },
+    { type: "text", text: "YES……" },
+    { type: "text", text: "YES……" },
+    { type: "text", text: "你先動搖了。" },
+    { type: "image", originalContentUrl: jojoImages["達比勝利"], previewImageUrl: jojoImages["達比勝利"] },
+  ]);
+}
 
-  if (act === "no") {
-    return client.replyMessage(event.replyToken, [
-      { type: "text", text: "NO" },
-      { type: "text", text: "NO" },
-      { type: "text", text: "NO NO NO" },
-      { type: "image", originalContentUrl: jojoImages["拒絕"], previewImageUrl: jojoImages["拒絕"] },
-    ]);
-  }
+if (act === "darby_no") {
+  return client.replyMessage(event.replyToken, [
+    { type: "image", originalContentUrl: jojoImages["達比對戰"], previewImageUrl: jojoImages["達比對戰"] },
+    { type: "text", text: "NO……" },
+    { type: "text", text: "STAND.exe 無法讀取你的內心。" },
+    { type: "text", text: "賭局繼續。" },
+  ]);
+}
 
-  if (act === "allin") {
-    const key = pick(Object.keys(jojoImages));
-    return client.replyMessage(event.replyToken, [
-      { type: "text", text: "……你確定要梭哈嗎？" },
-      { type: "image", originalContentUrl: jojoImages[key], previewImageUrl: jojoImages[key] },
-    ]);
-  }
+if (act === "darby_allin") {
+  return client.replyMessage(event.replyToken, [
+    { type: "image", originalContentUrl: jojoImages["達比對戰"], previewImageUrl: jojoImages["達比對戰"] },
+    { type: "text", text: "……你確定？" },
+    { type: "text", text: "我還沒翻牌。" },
+    { type: "text", text: "但你已經流汗了。" },
+    { type: "image", originalContentUrl: jojoImages["達比崩潰"], previewImageUrl: jojoImages["達比崩潰"] },
+  ]);
+}
 
   // 杜王町
   if (act === "hair") {
