@@ -320,11 +320,20 @@ app.post("/webhook", line.middleware(config), (req, res) => {
           return client.replyMessage(event.replyToken, darbyMenu());
         }
 
-        // 抽圖片
+        // 抽圖片（排除達比遊戲用圖）
         if (text === "抽") {
-          const key = pick(Object.keys(imageMap));
-          return replyImage(event, imageMap[key]);
-        }
+          const excluded = new Set(["達比開場", "達比對戰", "達比勝利", "達比崩潰"]);
+          const keys = Object.keys(imageMap).filter((k) => !excluded.has(k));
+
+  // 保底：避免 keys 被抽空
+  if (keys.length === 0) {
+    return client.replyMessage(event.replyToken, { type: "text", text: "沒有可抽的圖了（你把圖都封印了）。" });
+  }
+
+  const key = pick(keys);
+  return replyImage(event, imageMap[key]);
+}
+
 
         // 關鍵字回圖
         if (imageMap[text]) {
